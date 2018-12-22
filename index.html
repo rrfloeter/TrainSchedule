@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" 
+</head>
+
+<style>
+    .jumbotron-jumbotron-fluid {
+        background-color: black;
+        color: white;
+        height: 150px;
+        margin-left: 175px;
+        margin-right: 195px;
+        margin-top: 20px;
+    }
+
+    h1 {
+        margin-left: 300px;
+    }
+
+    .lead {
+        margin-left: 420px;
+    }
+
+    body{
+        background-image: url("images/grand-central.jpg");
+    }
+
+ .Scheduler {
+     margin-right: 60px;
+     margin-left: 60px;
+ }
+
+ h3{
+     margin-left: 60px;
+     color:white;
+     background-color:black;
+     margin-top:20px;
+     margin-right: 100px;
+ }
+
+ .Adder{
+     margin-right: 100px;
+     margin-left: 100px;
+ }
+
+.Train-Name{
+    color:white;
+    background-color: black;
+}
+
+.Destination{
+    color:white;
+    background-color: black;
+}
+
+.TrainTime{
+    color:white;
+    background-color:black;
+}
+
+.Freq{
+    color:white;
+    background-color:black;
+}
+
+.button{
+    margin-left: 90px;
+    margin-bottom: 20px;
+}
+</style>
+
+<body>
+<div class="jumbotron-jumbotron-fluid">
+<div class="container">
+<h1 class="display-4">Anytime is Train Time</h1>
+<p class="lead">Train Schedule Below</p>
+</div>
+</div>
+
+<h3>Current Train Schedule</h3>
+
+<div class = "Scheduler">
+<table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Train Name</th>
+            <th>Destination</th>
+            <th>Frequency (min)</th>
+            <th>Next Arrival</th>
+            <th>Minutes Away</th>
+          </tr>
+        </thead>
+        <tbody id  = "table_body">
+
+        </tbody>
+      </table>
+</div>
+
+<div class = "Adder">
+        <form role="form">
+              <div class="form-group row">
+              <div class = "Train-Name"><label for="name-input">Train Name</label></div>
+              <input class="form-control" id="name-input" type="text">
+              </div>
+
+              <div class="form-group row">
+              <div class = "Destination"><label for="dest-input">Destination</label></div>
+              <input class="form-control" id="dest-input" type="text">
+              </div>
+
+              <div class="form-group row">
+              <div class = "TrainTime"><label for="time-input">First Train Time(HH:mm - military time)</label></div>
+              <input class="form-control" id="time-input" type="time /">
+              </div>
+
+              <div class="form-group row">
+              <div class = "Freq"><label for="freq-input">Frequency (min)</label></div>
+                <input class="form-control" id="freq-input" type = "number"></textarea>
+              </div>
+          </form>
+</div>
+       <div class="button"><button class="btn btn-danger" id="add-user" type="submit">Submit</button></div>
+
+</body>
+<!-- JQuery Link -->
+<script src="https://code.jquery.com/jquery.js"></script>
+<!-- Link to Moment.js -->
+<script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+<!-- Link to Firebase -->
+<script src="https://www.gstatic.com/firebasejs/5.7.0/firebase.js"></script>
+
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDODIoKrWX8N9tDZL6CthUtNNKa2Wm2cbQ",
+    authDomain: "trainscheduler-cd159.firebaseapp.com",
+    databaseURL: "https://trainscheduler-cd159.firebaseio.com",
+    projectId: "trainscheduler-cd159",
+    storageBucket: "trainscheduler-cd159.appspot.com",
+    messagingSenderId: "55053574712"
+  };
+  firebase.initializeApp(config);
+
+//create a variable to reference the database.
+  var database = firebase.database();
+
+// Initial Values
+  var TrainName = "";
+  var Destination = "";
+  var TrainTime = "";
+  var Freq = 0;
+  var MinAway = "";
+  var NextArrival = "";
+
+
+//capture button ticket
+$("#add-user").on("click", function(event) {
+    event.preventDefault();
+
+//values per text boxes
+    TrainName = $("#name-input").val().trim();
+    Destination = $("#dest-input").val().trim();
+    TrainTime = $("#time-input").val().trim();
+    Freq = $("#freq-input").val().trim();
+
+
+//test values from textbox
+    console.log(TrainName);
+    console.log(Destination);
+    console.log(TrainTime);
+    console.log(Freq);
+    console.log(MinAway);
+    console.log(NextArrival);
+
+//Code for handling the push
+    database.ref().push({
+        TrainName: TrainName,
+        Destination: Destination,
+        TrainTime: TrainTime,
+        Freq: Freq,
+        NextArrival: NextArrival,
+        MinAway: MinAway
+    });
+
+});
+
+// Firebase watcher
+database.ref().limitToLast(1).on('value', snapshot => {
+    snapshot.forEach(snap => {
+      TrainName = snap.child("TrainName").val();
+      Destination = snap.child("Destination").val();
+      TrainTime = snap.child("TrainTime").val();
+      Freq = snap.child("Freq").val();
+      MinAway = snap.child("MinAway").val();
+      NextArrival = snap.child("NextArrival").val();
+
+//First Time (pushed back 1 year to make sure it comes before current time)
+var TrainTimeConverted = moment(TrainTime, "HH:mm").subtract(1,"years");
+console.log(TrainTimeConverted);
+
+//Current Time
+var CurrentTime = moment();
+console.log(CurrentTime);
+
+//Difference between times
+var diffTime = moment().diff(moment(TrainTimeConverted),"minutes");
+console.log(diffTime);
+
+//time apart
+var tRemainder = diffTime % Freq;
+console.log(tRemainder);
+
+//time till next train
+MinAway = Freq - tRemainder;
+console.log(MinAway);
+
+//When the next train will arrive
+NextArrival = moment().add(MinAway, "minutes").format("hh:mm A");
+console.log(NextArrival);
+
+//append data to table body
+    $("#table_body").append("<tr><td>" + TrainName + "</td><td>" + Destination + "</td><td>" + Freq + "</td><td>" + NextArrival + "</td><td>" + MinAway + "</td></tr>");
+
+    });
+});
+
+</script> 
